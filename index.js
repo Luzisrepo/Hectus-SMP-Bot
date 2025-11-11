@@ -13,16 +13,116 @@ const client = new Client({
 
 const config = {
     ticketCategories: ['General Support', 'Payment Support', 'Report Players', 'Report Bugs'],
-    redditSubreddits: ['memes', 'dankmemes', 'wholesomememes'],
     memeCooldown: new Set(),
-    mutedRoleName: 'Muted'
+    mutedRoleName: 'Muted',
+    // Meme API endpoints with fallback priority
+    memeAPIs: [
+        {
+            name: 'Reddit',
+            url: (subreddit) => `https://www.reddit.com/r/${subreddit}/hot.json?limit=50`,
+            processor: processRedditResponse
+        },
+        {
+            name: 'MemeAPI',
+            url: () => 'https://meme-api.com/gimme',
+            processor: processMemeAPIResponse
+        },
+        {
+            name: 'SomeRandomAPI',
+            url: () => 'https://some-random-api.com/meme',
+            processor: processSomeRandomAPIResponse
+        }
+    ]
 };
 
 const serverStats = {
     totalTickets: 0,
     memesServed: 0,
-    lastActivity: Date.now()
+    lastActivity: Date.now(),
+    apiUsage: {
+        Reddit: 0,
+        MemeAPI: 0,
+        SomeRandomAPI: 0,
+        Fallback: 0
+    }
 };
+
+// Enhanced local meme database
+const localMemes = [
+    {
+        title: "When you finally fix that bug",
+        url: "https://i.imgur.com/8Wr0D8a.png",
+        subreddit: "programmerhumor",
+        upvotes: 42000
+    },
+    {
+        title: "Minecraft in a nutshell",
+        url: "https://i.imgur.com/3JQ1p0q.png",
+        subreddit: "minecraft",
+        upvotes: 69000
+    },
+    {
+        title: "Discord mod life",
+        url: "https://i.imgur.com/5X2m3b9.png",
+        subreddit: "discord",
+        upvotes: 35000
+    },
+    {
+        title: "The hacker known as 4chan",
+        url: "https://i.imgur.com/2m2m2m2.png",
+        subreddit: "programming",
+        upvotes: 78000
+    },
+    {
+        title: "When the code works on first try",
+        url: "https://i.imgur.com/9W9W9W9.png",
+        subreddit: "developers",
+        upvotes: 45000
+    },
+    {
+        title: "Stack Overflow in real life",
+        url: "https://i.imgur.com/1m2m3m4.png",
+        subreddit: "ProgrammerHumor",
+        upvotes: 52000
+    },
+    {
+        title: "Git be like",
+        url: "https://i.imgur.com/5m6m7m8.png",
+        subreddit: "programmingmemes",
+        upvotes: 38000
+    },
+    {
+        title: "Debugging be like",
+        url: "https://i.imgur.com/9m0m1m2.png",
+        subreddit: "programming",
+        upvotes: 41000
+    },
+    {
+        title: "When the prod server crashes",
+        url: "https://i.imgur.com/3m4m5m6.png",
+        subreddit: "sysadmin",
+        upvotes: 29000
+    },
+    {
+        title: "AI taking over",
+        url: "https://i.imgur.com/7m8m9m0.png",
+        subreddit: "artificial",
+        upvotes: 33000
+    }
+];
+
+// Meme caching system
+const memeCache = {
+    data: [],
+    lastUpdated: 0,
+    ttl: 10 * 60 * 1000, // 10 minutes
+    size: 20,
+    isRefilling: false
+};
+
+// Rate limiting for API calls
+let lastRequestTime = 0;
+const REQUEST_DELAY = 2000; // 2 seconds between API calls
 
 const commands = [
     {
@@ -31,7 +131,7 @@ const commands = [
     },
     {
         name: 'meme',
-        description: 'Get a random meme from Reddit'
+        description: 'Get a random meme from various sources'
     },
     {
         name: 'ticketpanel',
@@ -84,6 +184,10 @@ const commands = [
                 required: true
             }
         ]
+    },
+    {
+        name: 'stats',
+        description: 'Show bot statistics and meme API usage'
     }
 ];
 
@@ -136,6 +240,7 @@ const presenceStates = [
 
 let currentPresenceIndex = 0;
 
+// Utility Functions
 function updateRichPresence() {
     const presence = presenceStates[currentPresenceIndex];
     
@@ -205,6 +310,206 @@ function formatDuration(ms) {
     return `${seconds} second(s)`;
 }
 
+// API Response Processors
+function processRedditResponse(data) {
+    if (!data.data || !data.data.children) {
+        throw new Error('Invalid Reddit response structure');
+    }
+    
+    const posts = data.data.children.filter(post => 
+        post.data && 
+        post.data.post_hint === 'image' && 
+        !post.data.over_18 &&
+        post.data.url &&
+        (post.data.url.includes('.jpg') || post.data.url.includes('.png') || post.data.url.includes('.gif'))
+    );
+    
+    if (posts.length === 0) {
+        throw new Error('No valid meme posts found');
+    }
+    
+    const randomPost = posts[Math.floor(Math.random() * posts.length)].data;
+    return {
+        title: randomPost.title || 'Funny Meme',
+        url: randomPost.url,
+        subreddit: randomPost.subreddit || 'memes',
+        upvotes: randomPost.ups || 1000,
+        source: 'Reddit'
+    };
+}
+
+function processMemeAPIResponse(data) {
+    if (!data.url) {
+        throw new Error('Invalid MemeAPI response');
+    }
+    
+    return {
+        title: data.title || 'Random Meme',
+        url: data.url,
+        subreddit: data.subreddit || 'memes',
+        upvotes: data.ups || 5000,
+        source: 'MemeAPI'
+    };
+}
+
+function processSomeRandomAPIResponse(data) {
+    if (!data.image) {
+        throw new Error('Invalid SomeRandomAPI response');
+    }
+    
+    return {
+        title: data.caption || 'Funny Meme',
+        url: data.image,
+        subreddit: 'memes',
+        upvotes: 3000,
+        source: 'SomeRandomAPI'
+    };
+}
+
+// Enhanced Meme Fetching System
+async function fetchWithTimeout(url, options = {}, timeout = 10000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        return response;
+    } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
+    }
+}
+
+async function fetchFromAPI(api, subreddit = 'memes') {
+    // Rate limiting
+    const now = Date.now();
+    if (now - lastRequestTime < REQUEST_DELAY) {
+        await new Promise(resolve => setTimeout(resolve, REQUEST_DELAY - (now - lastRequestTime)));
+    }
+    lastRequestTime = Date.now();
+    
+    try {
+        const url = typeof api.url === 'function' ? api.url(subreddit) : api.url;
+        const headers = {
+            'User-Agent': 'HectusSMP-Discord-Bot/1.0',
+            'Accept': 'application/json'
+        };
+        
+        console.log(`Trying ${api.name} API...`);
+        const response = await fetchWithTimeout(url, { headers });
+        
+        if (!response.ok) {
+            throw new Error(`API returned ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const meme = api.processor(data);
+        
+        // Track API usage
+        serverStats.apiUsage[api.name] = (serverStats.apiUsage[api.name] || 0) + 1;
+        console.log(`Successfully fetched from ${api.name}`);
+        
+        return meme;
+    } catch (error) {
+        console.log(`${api.name} API failed: ${error.message}`);
+        throw error;
+    }
+}
+
+async function fetchMemeFromAnyAPI(subreddit = 'memes') {
+    for (const api of config.memeAPIs) {
+        try {
+            const meme = await fetchFromAPI(api, subreddit);
+            if (meme && meme.url) {
+                return meme;
+            }
+        } catch (error) {
+            // Continue to next API
+            continue;
+        }
+    }
+    
+    // All APIs failed, use fallback
+    console.log('All APIs failed, using fallback meme');
+    serverStats.apiUsage.Fallback++;
+    return getFallbackMeme();
+}
+
+function getFallbackMeme() {
+    const randomMeme = localMemes[Math.floor(Math.random() * localMemes.length)];
+    return {
+        ...randomMeme,
+        source: 'Fallback'
+    };
+}
+
+// Caching System
+async function refillMemeCache() {
+    if (memeCache.isRefilling || memeCache.data.length >= memeCache.size) {
+        return;
+    }
+    
+    memeCache.isRefilling = true;
+    console.log('Refilling meme cache...');
+    
+    try {
+        const memesToFetch = memeCache.size - memeCache.data.length;
+        const fetchPromises = [];
+        
+        for (let i = 0; i < Math.min(memesToFetch, 5); i++) {
+            fetchPromises.push(fetchMemeFromAnyAPI());
+        }
+        
+        const newMemes = await Promise.allSettled(fetchPromises);
+        
+        for (const result of newMemes) {
+            if (result.status === 'fulfilled' && result.value) {
+                memeCache.data.push(result.value);
+            }
+        }
+        
+        memeCache.lastUpdated = Date.now();
+        console.log(`Cache refilled. Now has ${memeCache.data.length} memes`);
+    } catch (error) {
+        console.error('Error refilling cache:', error);
+    } finally {
+        memeCache.isRefilling = false;
+    }
+}
+
+function getMemeFromCache() {
+    if (memeCache.data.length === 0) {
+        return getFallbackMeme();
+    }
+    
+    const meme = memeCache.data.shift();
+    
+    // Trigger background refill if cache is getting low
+    if (memeCache.data.length < 5 && !memeCache.isRefilling) {
+        setTimeout(refillMemeCache, 1000);
+    }
+    
+    return meme;
+}
+
+async function getMeme() {
+    // Try cache first
+    if (memeCache.data.length > 0) {
+        const cachedMeme = getMemeFromCache();
+        if (cachedMeme) {
+            return cachedMeme;
+        }
+    }
+    
+    // If cache is empty, fetch fresh
+    return await fetchMemeFromAnyAPI();
+}
+
+// Moderation Functions
 async function getMutedRole(guild) {
     let mutedRole = guild.roles.cache.find(role => role.name === config.mutedRoleName);
     
@@ -260,6 +565,7 @@ async function sendPunishmentDM(member, action, duration, reason, staffMember) {
     }
 }
 
+// Ticket System
 async function createTicketChannel(interaction, category) {
     try {
         const guild = interaction.guild;
@@ -392,103 +698,57 @@ async function closeTicket(interaction) {
     }
 }
 
-// Local meme fallback database
-const localMemes = [
-    {
-        title: "When you finally fix that bug",
-        url: "https://i.imgur.com/8Wr0D8a.png",
-        subreddit: "programmerhumor",
-        upvotes: 42000
-    },
-    {
-        title: "Minecraft in a nutshell",
-        url: "https://i.imgur.com/3JQ1p0q.png",
-        subreddit: "minecraft",
-        upvotes: 69000
-    },
-    {
-        title: "Discord mod life",
-        url: "https://i.imgur.com/5X2m3b9.png",
-        subreddit: "discord",
-        upvotes: 35000
-    },
-    {
-        title: "The hacker known as 4chan",
-        url: "https://i.imgur.com/2m2m2m2.png",
-        subreddit: "programming",
-        upvotes: 78000
-    },
-    {
-        title: "When the code works on first try",
-        url: "https://i.imgur.com/9W9W9W9.png",
-        subreddit: "developers",
-        upvotes: 45000
-    }
-];
+function createTicketPanel() {
+    const embed = new EmbedBuilder()
+        .setTitle('Support Ticket System')
+        .setDescription('Please select the type of ticket you would like to create:')
+        .addFields(
+            { name: '🎫 General Support', value: 'For general questions and support', inline: true },
+            { name: '💳 Payment Support', value: 'For billing and payment issues', inline: true },
+            { name: '👥 Report Players', value: 'To report player behavior', inline: true },
+            { name: '🐛 Report Bugs', value: 'To report game bugs and issues', inline: true }
+        )
+        .setColor(0x00AE86)
+        .setTimestamp();
 
-async function fetchMeme(subreddit = 'memes') {
-    try {
-        // Try with proper headers first
-        const headers = {
-            'User-Agent': 'HectusSMP-Discord-Bot/1.0 (by /u/YourRedditUsername)',
-            'Accept': 'application/json'
-        };
-        
-        const response = await fetch(`https://www.reddit.com/r/${subreddit}/hot.json?limit=50`, { 
-            headers: headers,
-            timeout: 10000 // 10 second timeout
-        });
-        
-        if (!response.ok) {
-            console.log(`Reddit API returned ${response.status}, using fallback memes`);
-            return getFallbackMeme();
-        }
-        
-        const data = await response.json();
-        
-        // Check if data structure is valid
-        if (!data.data || !data.data.children) {
-            console.log('Invalid Reddit API response, using fallback');
-            return getFallbackMeme();
-        }
-        
-        const posts = data.data.children.filter(post => 
-            post.data && 
-            post.data.post_hint === 'image' && 
-            !post.data.over_18 &&
-            post.data.url &&
-            (post.data.url.includes('.jpg') || post.data.url.includes('.png') || post.data.url.includes('.gif'))
+    const buttons = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('ticket_general')
+                .setLabel('General Support')
+                .setStyle(ButtonStyle.Primary)
+                .setEmoji('🎫'),
+            new ButtonBuilder()
+                .setCustomId('ticket_payment')
+                .setLabel('Payment Support')
+                .setStyle(ButtonStyle.Success)
+                .setEmoji('💳'),
+            new ButtonBuilder()
+                .setCustomId('ticket_report_players')
+                .setLabel('Report Players')
+                .setStyle(ButtonStyle.Danger)
+                .setEmoji('👥'),
+            new ButtonBuilder()
+                .setCustomId('ticket_report_bugs')
+                .setLabel('Report Bugs')
+                .setStyle(ButtonStyle.Secondary)
+                .setEmoji('🐛')
         );
-        
-        if (posts.length === 0) {
-            console.log('No valid meme posts found, using fallback');
-            return getFallbackMeme();
-        }
-        
-        const randomPost = posts[Math.floor(Math.random() * posts.length)].data;
-        return {
-            title: randomPost.title || 'Funny Meme',
-            url: randomPost.url,
-            subreddit: randomPost.subreddit || 'memes',
-            upvotes: randomPost.ups || 1000
-        };
-    } catch (error) {
-        console.error('Error fetching meme from Reddit, using fallback:', error.message);
-        return getFallbackMeme();
-    }
+
+    return { embeds: [embed], components: [buttons] };
 }
 
-function getFallbackMeme() {
-    const randomMeme = localMemes[Math.floor(Math.random() * localMemes.length)];
-    console.log('Using fallback meme:', randomMeme.title);
-    return randomMeme;
-}
-
+// Bot Event Handlers
 client.once('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
     
-    updateRichPresence();
+    // Initialize cache
+    await refillMemeCache();
     
+    // Set up periodic cache refresh
+    setInterval(refillMemeCache, 5 * 60 * 1000); // Refresh every 5 minutes
+    
+    updateRichPresence();
     setInterval(updateRichPresence, 120000);
     
     setInterval(() => {
@@ -521,27 +781,58 @@ client.on('interactionCreate', async interaction => {
                 return;
             }
 
-            const subreddit = config.redditSubreddits[Math.floor(Math.random() * config.redditSubreddits.length)];
-            const meme = await fetchMeme(subreddit);
-            
-            if (meme) {
+            try {
+                const meme = await getMeme();
+                
                 const memeEmbed = new EmbedBuilder()
                     .setTitle(meme.title)
                     .setImage(meme.url)
-                    .setFooter({ text: `r/${meme.subreddit} • 👍 ${meme.upvotes.toLocaleString()}` })
+                    .setFooter({ 
+                        text: `r/${meme.subreddit} • 👍 ${meme.upvotes.toLocaleString()} • Source: ${meme.source}` 
+                    })
                     .setColor(0xFF4500);
                 
                 await interaction.reply({ embeds: [memeEmbed] });
                 serverStats.memesServed++;
                 serverStats.lastActivity = Date.now();
-            } else {
-                await interaction.reply({ content: 'Failed to fetch meme. Please try again later.', ephemeral: true });
+                
+                console.log(`Served meme from ${meme.source}. Cache: ${memeCache.data.length} memes remaining`);
+                
+            } catch (error) {
+                console.error('Error in meme command:', error);
+                await interaction.reply({ 
+                    content: 'Failed to fetch meme. Please try again later.', 
+                    ephemeral: true 
+                });
             }
 
             config.memeCooldown.add(interaction.user.id);
             setTimeout(() => {
                 config.memeCooldown.delete(interaction.user.id);
             }, 5000);
+            return;
+        }
+
+        if (interaction.commandName === 'stats') {
+            const totalAPIUsage = Object.values(serverStats.apiUsage).reduce((a, b) => a + b, 0);
+            const apiUsagePercentages = Object.entries(serverStats.apiUsage).map(([api, count]) => {
+                const percentage = totalAPIUsage > 0 ? ((count / totalAPIUsage) * 100).toFixed(1) : 0;
+                return `**${api}**: ${count} (${percentage}%)`;
+            }).join('\n');
+
+            const statsEmbed = new EmbedBuilder()
+                .setTitle('Bot Statistics')
+                .setColor(0x00AE86)
+                .addFields(
+                    { name: 'Memes Served', value: serverStats.memesServed.toString(), inline: true },
+                    { name: 'Tickets Created', value: serverStats.totalTickets.toString(), inline: true },
+                    { name: 'Cache Size', value: `${memeCache.data.length}/${memeCache.size}`, inline: true },
+                    { name: 'API Usage', value: apiUsagePercentages, inline: false },
+                    { name: 'Uptime', value: `<t:${Math.floor(serverStats.lastActivity / 1000)}:R>`, inline: true }
+                )
+                .setTimestamp();
+
+            await interaction.reply({ embeds: [statsEmbed] });
             return;
         }
 
@@ -713,45 +1004,5 @@ client.on('interactionCreate', async interaction => {
         }
     }
 });
-
-function createTicketPanel() {
-    const embed = new EmbedBuilder()
-        .setTitle('Support Ticket System')
-        .setDescription('Please select the type of ticket you would like to create:')
-        .addFields(
-            { name: '🎫 General Support', value: 'For general questions and support', inline: true },
-            { name: '💳 Payment Support', value: 'For billing and payment issues', inline: true },
-            { name: '👥 Report Players', value: 'To report player behavior', inline: true },
-            { name: '🐛 Report Bugs', value: 'To report game bugs and issues', inline: true }
-        )
-        .setColor(0x00AE86)
-        .setTimestamp();
-
-    const buttons = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId('ticket_general')
-                .setLabel('General Support')
-                .setStyle(ButtonStyle.Primary)
-                .setEmoji('🎫'),
-            new ButtonBuilder()
-                .setCustomId('ticket_payment')
-                .setLabel('Payment Support')
-                .setStyle(ButtonStyle.Success)
-                .setEmoji('💳'),
-            new ButtonBuilder()
-                .setCustomId('ticket_report_players')
-                .setLabel('Report Players')
-                .setStyle(ButtonStyle.Danger)
-                .setEmoji('👥'),
-            new ButtonBuilder()
-                .setCustomId('ticket_report_bugs')
-                .setLabel('Report Bugs')
-                .setStyle(ButtonStyle.Secondary)
-                .setEmoji('🐛')
-        );
-
-    return { embeds: [embed], components: [buttons] };
-}
 
 client.login(process.env.TOKEN);
