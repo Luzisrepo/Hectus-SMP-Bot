@@ -8,7 +8,7 @@
 
 **A feature-rich Discord bot designed for Minecraft SMP communities, now available as a template for developers**
 
-[Features](#features) • [Installation](#installation) • [Configuration](#configuration) • [Usage](#usage) • [Customization](#customization)
+[Features](#-features) • [Installation](#-installation) • [Configuration](#-configuration) • [Usage](#-usage) • [Customization](#-customization)
 
 </div>
 
