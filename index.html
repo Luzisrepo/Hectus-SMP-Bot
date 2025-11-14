@@ -1,1 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hectus SMP - Bot Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #7c3aed;
+            --primary-dark: #6d28d9;
+            --secondary: #06d6a0;
+            --accent: #ef476f;
+            --dark: #0f0f23;
+            --darker: #070711;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            color: var(--light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-border);
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            color: var(--light);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .nav-link:hover::before {
+            left: 100%;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: var(--glass);
+            box-shadow: var(--shadow);
+        }
+
+        .nav-link i {
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        .nav-link.active {
+            color: var(--primary);
+        }
+
+        .user-info {
+            margin-top: auto;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .user-role {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background: var(--glass);
+            border-radius: 12px;
+            padding: 0.8rem 1.2rem;
+            width: 300px;
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s ease;
+        }
+
+        .search-bar:focus-within {
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+
+        .search-bar i {
+            margin-right: 0.8rem;
+            color: var(--gray);
+        }
+
+        .search-bar input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--light);
+            width: 100%;
+        }
+
+        .search-bar input::placeholder {
+            color: var(--gray);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--glass);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-title {
+            font-size: 0.9rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(124, 58, 237, 0.2);
+            color: var(--primary);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-change {
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .positive {
+            color: var(--secondary);
+        }
+
+        .negative {
+            color: var(--accent);
+        }
+
+        /* Content Sections */
+        .content-section {
+            background: var(--glass);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .content-section:hover {
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .section-actions {
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        th {
+            color: var(--gray);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        tr {
+            transition: all 0.3s ease;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status.active {
+            background: rgba(6, 214, 160, 0.2);
+            color: var(--secondary);
+        }
+
+        .status.inactive {
+            background: rgba(239, 71, 111, 0.2);
+            color: var(--accent);
+        }
+
+        .status.pending {
+            background: rgba(255, 183, 3, 0.2);
+            color: #ffb703;
+        }
+
+        /* Progress Bars */
+        .progress-container {
+            margin-top: 0.5rem;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+
+        /* Loading */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Connection Status */
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: rgba(239, 71, 111, 0.2);
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        .connection-status.connected {
+            background: rgba(6, 214, 160, 0.2);
+            color: var(--secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                padding: 1rem;
+            }
+            
+            .nav-links {
+                flex-direction: row;
+                overflow-x: auto;
+                padding-bottom: 0.5rem;
+            }
+            
+            .nav-link {
+                white-space: nowrap;
+            }
+            
+            .user-info {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .search-bar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="logo-text">Hectus SMP</div>
+            </div>
+            
+            <div class="nav-links">
+                <a href="#" class="nav-link active">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Tickets</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-user-shield"></i>
+                    <span>Moderation</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </div>
+            
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-details">
+                    <div class="user-name">Bot Dashboard</div>
+                    <div class="user-role">Hectus SMP</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1 class="page-title">Bot Dashboard</h1>
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search...">
+                </div>
+            </div>
+
+            <!-- Connection Status -->
+            <div class="connection-status" id="connection-status">
+                <i class="fas fa-circle"></i>
+                <span>Connecting to bot...</span>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card fade-in">
+                    <div class="stat-header">
+                        <div class="stat-title">Memes Served</div>
+                        <div class="stat-icon">
+                            <i class="fas fa-images"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="memes-served">0</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Real-time</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card fade-in delay-1">
+                    <div class="stat-header">
+                        <div class="stat-title">Tickets Created</div>
+                        <div class="stat-icon">
+                            <i class="fas fa-ticket-alt"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="tickets-created">0</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Real-time</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card fade-in delay-2">
+                    <div class="stat-header">
+                        <div class="stat-title">Active Mutes</div>
+                        <div class="stat-icon">
+                            <i class="fas fa-volume-mute"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="active-mutes">0</div>
+                    <div class="stat-change negative">
+                        <i class="fas fa-arrow-down"></i>
+                        <span>Real-time</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card fade-in delay-3">
+                    <div class="stat-header">
+                        <div class="stat-title">Cache Efficiency</div>
+                        <div class="stat-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="cache-efficiency">0%</div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="cache-progress" style="background: var(--secondary);"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Server Stats -->
+            <div class="stats-grid">
+                <div class="stat-card fade-in">
+                    <div class="stat-header">
+                        <div class="stat-title">Servers</div>
+                        <div class="stat-icon">
+                            <i class="fas fa-server"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="server-count">0</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Real-time</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card fade-in delay-1">
+                    <div class="stat-header">
+                        <div class="stat-title">Total Members</div>
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="member-count">0</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Real-time</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card fade-in delay-2">
+                    <div class="stat-header">
+                        <div class="stat-title">Uptime</div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="uptime">0h 0m</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Real-time</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card fade-in delay-3">
+                    <div class="stat-header">
+                        <div class="stat-title">Last Activity</div>
+                        <div class="stat-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="last-activity">Just now</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Real-time</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- API Usage Section -->
+            <div class="content-section fade-in delay-1">
+                <div class="section-header">
+                    <h2 class="section-title">API Usage Statistics</h2>
+                    <div class="section-actions">
+                        <button class="btn" id="refresh-stats">
+                            <i class="fas fa-sync-alt"></i>
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar" id="api-usage-bar">
+                        <!-- Dynamically filled by JavaScript -->
+                    </div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; margin-top: 1rem;" id="api-usage-labels">
+                    <!-- Dynamically filled by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Active Tickets Section -->
+            <div class="content-section fade-in delay-2">
+                <div class="section-header">
+                    <h2 class="section-title">Active Tickets</h2>
+                    <div class="section-actions">
+                        <button class="btn btn-secondary" id="filter-tickets">
+                            <i class="fas fa-filter"></i>
+                            <span>Filter</span>
+                        </button>
+                        <button class="btn" id="new-ticket">
+                            <i class="fas fa-plus"></i>
+                            <span>New Ticket</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table id="tickets-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Category</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tickets-body">
+                            <!-- Dynamically filled by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Moderation Actions -->
+            <div class="content-section fade-in delay-3">
+                <div class="section-header">
+                    <h2 class="section-title">Active Mutes</h2>
+                    <div class="section-actions">
+                        <button class="btn btn-secondary" id="export-mutes">
+                            <i class="fas fa-download"></i>
+                            <span>Export</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table id="mutes-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Guild</th>
+                                <th>Reason</th>
+                                <th>Duration</th>
+                                <th>Issued</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mutes-body">
+                            <!-- Dynamically filled by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - Update this with your bot server URL
+        const BOT_API_BASE_URL = 'http://217.154.114.227:9121/'; // Change this to your bot server's public URL
+        
+        // DOM elements
+        const memesServedEl = document.getElementById('memes-served');
+        const ticketsCreatedEl = document.getElementById('tickets-created');
+        const activeMutesEl = document.getElementById('active-mutes');
+        const cacheEfficiencyEl = document.getElementById('cache-efficiency');
+        const cacheProgressEl = document.getElementById('cache-progress');
+        const serverCountEl = document.getElementById('server-count');
+        const memberCountEl = document.getElementById('member-count');
+        const uptimeEl = document.getElementById('uptime');
+        const lastActivityEl = document.getElementById('last-activity');
+        const apiUsageBarEl = document.getElementById('api-usage-bar');
+        const apiUsageLabelsEl = document.getElementById('api-usage-labels');
+        const ticketsBodyEl = document.getElementById('tickets-body');
+        const mutesBodyEl = document.getElementById('mutes-body');
+        const refreshStatsBtn = document.getElementById('refresh-stats');
+        const connectionStatusEl = document.getElementById('connection-status');
+
+        // Colors for API usage
+        const apiColors = {
+            'MemeAPI': '#7c3aed',
+            'Reddit': '#06d6a0',
+            'SomeRandomAPI': '#ef476f',
+            'Fallback': '#ffb703'
+        };
+
+        // Update connection status
+        function updateConnectionStatus(connected, message = '') {
+            if (connected) {
+                connectionStatusEl.className = 'connection-status connected';
+                connectionStatusEl.innerHTML = '<i class="fas fa-circle"></i><span>Connected to bot</span>';
+            } else {
+                connectionStatusEl.className = 'connection-status';
+                connectionStatusEl.innerHTML = `<i class="fas fa-circle"></i><span>${message || 'Disconnected from bot'}</span>`;
+            }
+        }
+
+        // Format duration
+        function formatUptime(ms) {
+            if (!ms) return '0s';
+            
+            const seconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (days > 0) return `${days}d ${hours % 24}h`;
+            if (hours > 0) return `${hours}h ${minutes % 60}m`;
+            if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
+            return `${seconds}s`;
+        }
+
+        // Format date
+        function formatDate(timestamp) {
+            if (!timestamp) return 'Unknown';
+            
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins} minute(s) ago`;
+            if (diffHours < 24) return `${diffHours} hour(s) ago`;
+            return `${diffDays} day(s) ago`;
+        }
+
+        // Fetch and update stats
+        async function updateStats() {
+            try {
+                const response = await fetch(`${BOT_API_BASE_URL}/api/stats`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const stats = await response.json();
+
+                // Update main stats
+                memesServedEl.textContent = stats.memesServed?.toLocaleString() || '0';
+                ticketsCreatedEl.textContent = stats.totalTickets?.toLocaleString() || '0';
+                
+                // Update cache efficiency
+                const cacheEfficiency = stats.cacheStatus ? 
+                    (stats.cacheStatus.size / stats.cacheStatus.capacity) * 100 : 0;
+                cacheEfficiencyEl.textContent = `${cacheEfficiency.toFixed(1)}%`;
+                cacheProgressEl.style.width = `${cacheEfficiency}%`;
+
+                // Update server stats
+                serverCountEl.textContent = stats.serverInfo?.guildCount?.toLocaleString() || '0';
+                memberCountEl.textContent = stats.serverInfo?.memberCount?.toLocaleString() || '0';
+                uptimeEl.textContent = formatUptime(stats.uptime);
+                lastActivityEl.textContent = formatDate(stats.lastActivity);
+
+                // Update API usage
+                if (stats.apiUsage) {
+                    updateApiUsage(stats.apiUsage);
+                }
+                
+                updateConnectionStatus(true);
+                
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+                updateConnectionStatus(false, `Connection error: ${error.message}`);
+                
+                // Show placeholder data when connection fails
+                memesServedEl.textContent = 'N/A';
+                ticketsCreatedEl.textContent = 'N/A';
+                activeMutesEl.textContent = 'N/A';
+                cacheEfficiencyEl.textContent = '0%';
+                cacheProgressEl.style.width = '0%';
+                serverCountEl.textContent = 'N/A';
+                memberCountEl.textContent = 'N/A';
+                uptimeEl.textContent = 'N/A';
+                lastActivityEl.textContent = 'N/A';
+            }
+        }
+
+        // Update API usage visualization
+        function updateApiUsage(apiUsage) {
+            const total = Object.values(apiUsage).reduce((sum, count) => sum + count, 0);
+            
+            // Clear previous content
+            apiUsageBarEl.innerHTML = '';
+            apiUsageLabelsEl.innerHTML = '';
+            
+            if (total === 0) {
+                const noData = document.createElement('div');
+                noData.textContent = 'No API usage data available';
+                noData.style.color = 'var(--gray)';
+                noData.style.textAlign = 'center';
+                apiUsageLabelsEl.appendChild(noData);
+                return;
+            }
+            
+            // Create progress bars and labels
+            Object.entries(apiUsage).forEach(([api, count]) => {
+                if (count > 0) {
+                    const percentage = (count / total) * 100;
+                    
+                    // Progress bar segment
+                    const segment = document.createElement('div');
+                    segment.className = 'progress-fill';
+                    segment.style.width = `${percentage}%`;
+                    segment.style.background = apiColors[api] || '#64748b';
+                    segment.title = `${api}: ${count} (${percentage.toFixed(1)}%)`;
+                    apiUsageBarEl.appendChild(segment);
+                    
+                    // Label
+                    const labelContainer = document.createElement('div');
+                    const labelDot = document.createElement('div');
+                    labelDot.style.width = '12px';
+                    labelDot.style.height = '12px';
+                    labelDot.style.borderRadius = '50%';
+                    labelDot.style.background = apiColors[api] || '#64748b';
+                    labelDot.style.display = 'inline-block';
+                    labelDot.style.marginRight = '0.5rem';
+                    
+                    const labelText = document.createElement('span');
+                    labelText.textContent = `${api}: ${count} (${percentage.toFixed(1)}%)`;
+                    
+                    labelContainer.appendChild(labelDot);
+                    labelContainer.appendChild(labelText);
+                    apiUsageLabelsEl.appendChild(labelContainer);
+                }
+            });
+        }
+
+        // Fetch and update tickets
+        async function updateTickets() {
+            try {
+                const response = await fetch(`${BOT_API_BASE_URL}/api/tickets`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const tickets = await response.json();
+                
+                // Clear previous content
+                ticketsBodyEl.innerHTML = '';
+                
+                if (!tickets || tickets.length === 0) {
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.colSpan = 6;
+                    cell.textContent = 'No active tickets';
+                    cell.style.textAlign = 'center';
+                    cell.style.padding = '2rem';
+                    cell.style.color = 'var(--gray)';
+                    row.appendChild(cell);
+                    ticketsBodyEl.appendChild(row);
+                    return;
+                }
+                
+                // Add tickets to table
+                tickets.forEach(ticket => {
+                    const row = document.createElement('tr');
+                    
+                    // ID
+                    const idCell = document.createElement('td');
+                    idCell.textContent = `#${ticket.id?.slice(-4) || 'N/A'}`;
+                    row.appendChild(idCell);
+                    
+                    // User
+                    const userCell = document.createElement('td');
+                    userCell.textContent = ticket.user || 'Unknown User';
+                    row.appendChild(userCell);
+                    
+                    // Category
+                    const categoryCell = document.createElement('td');
+                    categoryCell.textContent = ticket.category || 'General Support';
+                    row.appendChild(categoryCell);
+                    
+                    // Status
+                    const statusCell = document.createElement('td');
+                    const statusSpan = document.createElement('span');
+                    statusSpan.className = 'status active';
+                    statusSpan.innerHTML = '<i class="fas fa-circle"></i> Active';
+                    statusCell.appendChild(statusSpan);
+                    row.appendChild(statusCell);
+                    
+                    // Created
+                    const createdCell = document.createElement('td');
+                    createdCell.textContent = formatDate(ticket.createdAt);
+                    row.appendChild(createdCell);
+                    
+                    // Actions
+                    const actionsCell = document.createElement('td');
+                    const viewBtn = document.createElement('button');
+                    viewBtn.className = 'btn';
+                    viewBtn.style.padding = '0.4rem 0.8rem';
+                    viewBtn.style.fontSize = '0.8rem';
+                    viewBtn.innerHTML = '<i class="fas fa-eye"></i>';
+                    viewBtn.title = 'View Ticket';
+                    actionsCell.appendChild(viewBtn);
+                    row.appendChild(actionsCell);
+                    
+                    ticketsBodyEl.appendChild(row);
+                });
+                
+            } catch (error) {
+                console.error('Error fetching tickets:', error);
+                ticketsBodyEl.innerHTML = '';
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = 6;
+                cell.textContent = 'Error loading tickets';
+                cell.style.textAlign = 'center';
+                cell.style.padding = '2rem';
+                cell.style.color = 'var(--accent)';
+                row.appendChild(cell);
+                ticketsBodyEl.appendChild(row);
+            }
+        }
+
+        // Fetch and update mutes
+        async function updateMutes() {
+            try {
+                const response = await fetch(`${BOT_API_BASE_URL}/api/mutes`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const mutes = await response.json();
+                
+                // Update active mutes count
+                activeMutesEl.textContent = mutes?.length || '0';
+                
+                // Clear previous content
+                mutesBodyEl.innerHTML = '';
+                
+                if (!mutes || mutes.length === 0) {
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.colSpan = 5;
+                    cell.textContent = 'No active mutes';
+                    cell.style.textAlign = 'center';
+                    cell.style.padding = '2rem';
+                    cell.style.color = 'var(--gray)';
+                    row.appendChild(cell);
+                    mutesBodyEl.appendChild(row);
+                    return;
+                }
+                
+                // Add mutes to table
+                mutes.forEach(mute => {
+                    const row = document.createElement('tr');
+                    
+                    // User
+                    const userCell = document.createElement('td');
+                    userCell.textContent = mute.user || 'Unknown User';
+                    row.appendChild(userCell);
+                    
+                    // Guild
+                    const guildCell = document.createElement('td');
+                    guildCell.textContent = mute.guild || 'Unknown Guild';
+                    row.appendChild(guildCell);
+                    
+                    // Reason
+                    const reasonCell = document.createElement('td');
+                    reasonCell.textContent = mute.reason || 'No reason provided';
+                    row.appendChild(reasonCell);
+                    
+                    // Duration
+                    const durationCell = document.createElement('td');
+                    durationCell.textContent = mute.duration || 'Unknown';
+                    row.appendChild(durationCell);
+                    
+                    // Issued
+                    const issuedCell = document.createElement('td');
+                    issuedCell.textContent = formatDate(mute.issuedAt);
+                    row.appendChild(issuedCell);
+                    
+                    mutesBodyEl.appendChild(row);
+                });
+                
+            } catch (error) {
+                console.error('Error fetching mutes:', error);
+                mutesBodyEl.innerHTML = '';
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = 5;
+                cell.textContent = 'Error loading mutes';
+                cell.style.textAlign = 'center';
+                cell.style.padding = '2rem';
+                cell.style.color = 'var(--accent)';
+                row.appendChild(cell);
+                mutesBodyEl.appendChild(row);
+            }
+        }
+
+        // Update all data
+        function updateAllData() {
+            updateStats();
+            updateTickets();
+            updateMutes();
+        }
+
+        // Event listeners
+        refreshStatsBtn.addEventListener('click', function() {
+            this.innerHTML = '<i class="fas fa-sync-alt loading"></i><span>Refreshing...</span>';
+            updateAllData();
+            setTimeout(() => {
+                this.innerHTML = '<i class="fas fa-sync-alt"></i><span>Refresh</span>';
+            }, 2000);
+        });
+
+        document.getElementById('filter-tickets').addEventListener('click', function() {
+            alert('Filter functionality would be implemented here');
+        });
+
+        document.getElementById('new-ticket').addEventListener('click', function() {
+            alert('New ticket functionality would be implemented here');
+        });
+
+        document.getElementById('export-mutes').addEventListener('click', function() {
+            alert('Export functionality would be implemented here');
+        });
+
+        // Nav link active state
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                navLinks.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Add hover effects to cards
+        const cards = document.querySelectorAll('.stat-card, .content-section');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Search functionality
+        const searchInput = document.querySelector('.search-bar input');
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            // This would filter the tables in a real implementation
+            console.log('Searching for:', searchTerm);
+        });
+
+        // Initialize and set up periodic updates
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Web Panel Initialized');
+            console.log('📡 Connecting to bot API:', BOT_API_BASE_URL);
+            
+            updateAllData();
+            setInterval(updateAllData, 10000); // Update every 10 seconds
+            
+            // Add animation to stats cards on load
+            setTimeout(() => {
+                document.querySelectorAll('.stat-card').forEach((card, index) => {
+                    card.style.animationDelay = `${index * 0.1}s`;
+                });
+            }, 100);
+        });
+    </script>
+</body>
+</html>
